@@ -20,7 +20,8 @@ public class PInteraccion : MonoBehaviour
     private float tiempoParaRecuperar;
     [Header("layer caja")]
     private int layerCaja;
-
+    [Header("desabilitar llamado")]
+    private bool desabilitar;
     /*** Cuando se Activa, Desactiva , Destruye ***/
     /**********************************************/
 
@@ -41,12 +42,13 @@ public class PInteraccion : MonoBehaviour
         Debug.DrawRay(transform.position, new Vector3(direccionX*distanciaDelRayCast, 0, 0), Color.blue, 0.1f);
         if(hit.collider != null && !Input.GetKey("space"))
         {
+            desabilitar = true;
             // interar con pared
             if (hit.collider.gameObject.layer == layerPSostener && imgResistencia.fillAmount > 0.001f)
             {
                 move.activarAumentarSalto = true;
                 activarSostener = true;
-                imgResistencia.fillAmount -= 0.005f;
+                imgResistencia.fillAmount -= 0.001f;
                 move.rb.velocity = new Vector2(move.rb.velocity.x, 0); move.rb.gravityScale = 0;
                 if (!activarSalto) { move.verificarSuelo.estaSuelo = true;activarSalto = true; }
                 tiempoParaRecuperar = tiempoRecuperarse;
@@ -72,7 +74,8 @@ public class PInteraccion : MonoBehaviour
             }
             else
             {
-                move.velocidad = move.vel;
+                //move.velocidad = PlayerPrefs.GetFloat("velocidad", 0);
+                print("1");
             }
         }
         else
@@ -80,8 +83,12 @@ public class PInteraccion : MonoBehaviour
             activarSostener = false;
             move.rb.gravityScale = 1;
             activarSalto = false;
-            move.velocidad = move.vel;
             if (move.activarAumentarSalto) { StartCoroutine(AumentarSalto()); move.activarAumentarSalto = false; }
+            if (desabilitar)
+            {
+                move.velocidad = PlayerPrefs.GetFloat("velocidad", 0);
+                desabilitar = false;
+            }
         }
         // recuperar resistencia
         if (tiempoParaRecuperar<0 && imgResistencia.fillAmount != 1)

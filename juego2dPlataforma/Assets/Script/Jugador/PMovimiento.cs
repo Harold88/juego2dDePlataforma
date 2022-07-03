@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class PMovimiento : MonoBehaviour
 {
@@ -15,9 +16,8 @@ public class PMovimiento : MonoBehaviour
     [Header("Variables")]
     [HideInInspector] public float x, y;
      public float velocidad;
-    [HideInInspector] public float vel;
     public float salto;
-    [SerializeField] private bool mejorarSalto=false;
+    public bool mejorarSalto=false;
     public float alSaltar;
     public float alCaer;
     [Header("doble salto")]
@@ -27,6 +27,7 @@ public class PMovimiento : MonoBehaviour
     private int layerMuerte;
     private Vector2 posicionInicio;
     [Header("Dash")]
+    public bool dashHorizontal;
     [SerializeField] private float fuerzaDash;
     public bool activarDash=false;
     private bool volverUsarDash;
@@ -38,12 +39,14 @@ public class PMovimiento : MonoBehaviour
     private bool dashMove;
     [Header("Aumento de Salto")]
     public bool activarAumentarSalto;
-    public float aumentarSalto;
-    [HideInInspector] public float aSalto;
+    [HideInInspector] public float aumentarSalto;
+    public float aSalto;
     [Header("bajar plataforma")]
     private int layerPInteractivo;
     private bool activarBajarPlataforma=false;
     private GameObject bajarPlataforma = null;
+    [Header("menu Ui para configuracion")]
+    [HideInInspector] public UI_PJConfiguracion UIConfiguracion;
     /*** Cuando se Activa, Desactiva , Destruye ***/
     /**********************************************/
 
@@ -51,19 +54,32 @@ public class PMovimiento : MonoBehaviour
     /****************************/
     private void Start()
     {
+        if(FindObjectOfType<UI_PJConfiguracion>() != null) { UIConfiguracion = FindObjectOfType<UI_PJConfiguracion>(); }
         rb = GetComponent<Rigidbody2D>();
         verificarSuelo = transform.GetChild(0).gameObject.GetComponent<PVerificarSuelo>();
         interaccion = GetComponent<PInteraccion>();
-        vel = velocidad;
         posicionInicio = transform.position;
         layerMuerte = LayerMask.NameToLayer("Muerte");
         aSalto = aumentarSalto;
         layerPInteractivo = LayerMask.NameToLayer("Default");
+
+
+        // validacion de numero
+        velocidad = PlayerPrefs.GetFloat("velocidad", 0);
+        salto = PlayerPrefs.GetFloat("salto", 0);
+        if(PlayerPrefs.GetInt("mejorarSalto", 0)    > 0) { mejorarSalto = true; }      else { mejorarSalto = false; }
+        if (PlayerPrefs.GetInt("saltoDoble", 0)     > 0) { activarDobleSalto = true; } else { activarDobleSalto = false; }
+        if (PlayerPrefs.GetInt("dashHorizontal", 0) > 0) { dashHorizontal = true; }    else { dashHorizontal = false; }
     }
     private void Update()
     {
+        // conseguir script
+        if (FindObjectOfType<UI_PJConfiguracion>() != null) { UIConfiguracion = FindObjectOfType<UI_PJConfiguracion>(); }
+        else { UIConfiguracion = null; }
+        // configuracion de ui 
+        ConfiguracionUIPersonaje();
         // movimiento
-        
+
         if (!activarDash) {
             x = Input.GetAxis("Horizontal");
             y = Input.GetAxis("Vertical");
@@ -154,16 +170,25 @@ public class PMovimiento : MonoBehaviour
         rb.gravityScale = 0;
         if (!dashMove)
         {
-            // x
-            if ( dashDer && y == 0 ||  dashDer && x == 0 && y == 0){ rb.velocity = Vector2.right * fuerzaDash; }
-            if (!dashDer && y == 0 || !dashDer && x == 0 && y == 0){ rb.velocity = Vector2.left  * fuerzaDash; }
-            // y
-            if( dashUp && x == 0 && y != 0) { rb.velocity = Vector2.up   * (fuerzaDash * 0.80f); }
-            if(!dashUp && x == 0 && y != 0) { rb.velocity = Vector2.down * (fuerzaDash * 0.80f); }
+            if (!dashHorizontal)
+            {
+                // x
+                if (dashDer && y == 0 || dashDer && x == 0 && y == 0) { rb.velocity = Vector2.right * fuerzaDash; }
+                if (!dashDer && y == 0 || !dashDer && x == 0 && y == 0) { rb.velocity = Vector2.left * fuerzaDash; }
+                // y
+                if (dashUp && x == 0 && y != 0) { rb.velocity = Vector2.up * (fuerzaDash * 0.80f); }
+                if (!dashUp && x == 0 && y != 0) { rb.velocity = Vector2.down * (fuerzaDash * 0.80f); }
+            }
+            else
+            {
+                // x
+                if (dashDer  ) { rb.velocity = Vector2.right * fuerzaDash; }
+                if (!dashDer ) { rb.velocity = Vector2.left * fuerzaDash; }
+            }
         }
         else
         {
-            rb.velocity = new Vector2(dashX, dashY)*(fuerzaDash*0.70f);
+            rb.velocity = new Vector2(dashX, dashY) * (fuerzaDash * 0.70f);
         }
     }
     public void ObtenerDireccionDash()
@@ -186,7 +211,7 @@ public class PMovimiento : MonoBehaviour
             {
                 dashUp = false;
             }
-            dashMove = (x != 0 && y != 0 ? true : false);
+            if (!dashHorizontal) { dashMove = (x != 0 && y != 0 ? true : false); } else { dashMove = false; }
             dashX = (x > 0 ? 1 : -1);
             dashY = (y > 0 ? 1 : -1);
         }
@@ -213,9 +238,29 @@ public class PMovimiento : MonoBehaviour
         }
         else { activarBajarPlataforma = false; }
     }
+
+
     /*** Input ***/
     /************/
 
     /*** Ayuda Visuales ***/
     /*********************/
+
+    /*** configuracion desde Ui ***/
+    /*********************/
+    public void ConfiguracionUIPersonaje()
+    {
+        if (UIConfiguracion != null)
+        {
+            if (UIConfiguracion.gameObject.activeInHierarchy)
+            {
+                velocidad = float.Parse(UIConfiguracion.velocidad.text);
+                salto = float.Parse(UIConfiguracion.salto.text);
+                mejorarSalto = UIConfiguracion.mejorarSalto.isOn;
+                activarDobleSalto = UIConfiguracion.saltoDoble.isOn;
+                dashHorizontal = UIConfiguracion.dashHorizontal.isOn;
+            }
+        }
+    }
+
 }
