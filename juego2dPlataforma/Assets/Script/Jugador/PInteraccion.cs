@@ -11,10 +11,12 @@ public class PInteraccion : MonoBehaviour
     [SerializeField] private LayerMask mascara;
     private int layerPSostener;
     private int direccionX;
+    private int direccionY;
     [HideInInspector] public bool activarSostener;
     [Header("img resistencia")]
     [SerializeField] private Image imgResistencia;
     [HideInInspector]public bool activarSalto = false;
+    public float tiempoEstamina;
     [Header("tiempo para recuperarse")]
     [SerializeField] private float tiempoRecuperarse;
     private float tiempoParaRecuperar;
@@ -36,10 +38,10 @@ public class PInteraccion : MonoBehaviour
     private void Update()
     {
         // direccion de x
-        DireccionX();
+        DireccionXY();
         // sostener en la pared
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, new Vector2(direccionX, 0), distanciaDelRayCast,mascara) ;
-        Debug.DrawRay(transform.position, new Vector3(direccionX*distanciaDelRayCast, 0, 0), Color.blue, 0.1f);
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, new Vector2(direccionX, direccionY), distanciaDelRayCast,mascara) ;
+        Debug.DrawRay(transform.position, new Vector3(direccionX*distanciaDelRayCast, direccionY * distanciaDelRayCast, 0), Color.blue, 0.1f);
         if(hit.collider != null && !Input.GetKey("space"))
         {
             desabilitar = true;
@@ -48,7 +50,7 @@ public class PInteraccion : MonoBehaviour
             {
                 move.activarAumentarSalto = true;
                 activarSostener = true;
-                imgResistencia.fillAmount -= 0.001f;
+                imgResistencia.fillAmount -= 0.003f;
                 move.rb.velocity = new Vector2(move.rb.velocity.x, 0); move.rb.gravityScale = 0;
                 if (!activarSalto) { move.verificarSuelo.estaSuelo = true;activarSalto = true; }
                 tiempoParaRecuperar = tiempoRecuperarse;
@@ -102,11 +104,17 @@ public class PInteraccion : MonoBehaviour
     }
     /*** Colisiones ***/
     /*****************/
-    public void DireccionX()
+    public void DireccionXY()
     {
-        if(Input.GetKey("d")) { direccionX = 1; }
-        if(Input.GetKey("a")) { direccionX = -1; }
-        if(!Input.GetKey("d") && !Input.GetKey("a")) { direccionX = 0; }
+        if(Input.GetKey(KeyCode.LeftArrow)) {  direccionX = -1; }
+        if(Input.GetKey(KeyCode.RightArrow)) { direccionX =  1; }
+        if(!Input.GetKey(KeyCode.LeftArrow) && !Input.GetKey(KeyCode.RightArrow)) { direccionX = 0; }
+
+        if(Input.GetKey(KeyCode.UpArrow))   {  direccionY =  1; }
+        if (Input.GetKey(KeyCode.DownArrow)) { direccionY = -1; }
+        if (!Input.GetKey(KeyCode.UpArrow) && !Input.GetKey(KeyCode.DownArrow)) { direccionY = 0; }
+
+
     }
     /*** Metodo ***/
     /*************/

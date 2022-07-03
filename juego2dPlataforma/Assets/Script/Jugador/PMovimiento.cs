@@ -27,6 +27,7 @@ public class PMovimiento : MonoBehaviour
     private int layerMuerte;
     private Vector2 posicionInicio;
     [Header("Dash")]
+    private int flechaX, flechaY;
     public bool dashHorizontal;
     [SerializeField] private float fuerzaDash;
     public bool activarDash=false;
@@ -47,6 +48,9 @@ public class PMovimiento : MonoBehaviour
     private GameObject bajarPlataforma = null;
     [Header("menu Ui para configuracion")]
     [HideInInspector] public UI_PJConfiguracion UIConfiguracion;
+    [Header("Punto de Guia")]
+    [SerializeField] private Transform puntoGuia;
+    private float puntoX, puntoY;
     /*** Cuando se Activa, Desactiva , Destruye ***/
     /**********************************************/
 
@@ -81,8 +85,14 @@ public class PMovimiento : MonoBehaviour
         // movimiento
 
         if (!activarDash) {
-            x = Input.GetAxis("Horizontal");
-            y = Input.GetAxis("Vertical");
+            // x
+            if (Input.GetKey("a") && !Input.GetKey("d")) { x = -1; }
+            if (Input.GetKey("d") && !Input.GetKey("a")) { x =  1; }
+            if(!Input.GetKey("a") && !Input.GetKey("d")) { x =  0; }
+            // y
+            if (Input.GetKey("s") && !Input.GetKey("w")) { y = -1; }
+            if (Input.GetKey("w") && !Input.GetKey("s")) { y =  1; }
+            if (!Input.GetKey("s") && !Input.GetKey("w")){ y =  0; }
             rb.velocity = new Vector2(x * velocidad, rb.velocity.y);
         }
         // salto
@@ -128,16 +138,31 @@ public class PMovimiento : MonoBehaviour
             }    
         }
         // dash
-        ObtenerDireccionDash();
-        if (Input.GetKeyDown("j") && !activarDash && !volverUsarDash)
+        if (!activarDash)
         {
-            activarDash = true;
-            volverUsarDash = true;
-            StartCoroutine(TiempoDash());
+            // x
+            if (Input.GetKey(KeyCode.LeftArrow) && !Input.GetKey(KeyCode.RightArrow)) { flechaX = -1; }
+            if (Input.GetKey(KeyCode.RightArrow) && !Input.GetKey(KeyCode.LeftArrow)) { flechaX = 1; }
+            if (!Input.GetKey(KeyCode.LeftArrow) && !Input.GetKey(KeyCode.RightArrow)) { flechaX = 0; }
+            // y
+            if (Input.GetKey(KeyCode.DownArrow) && !Input.GetKey(KeyCode.UpArrow)) { flechaY = -1; }
+            if (Input.GetKey(KeyCode.UpArrow) && !Input.GetKey(KeyCode.DownArrow)) { flechaY = 1; }
+            if (!Input.GetKey(KeyCode.DownArrow) && !Input.GetKey(KeyCode.UpArrow)) { flechaY = 0; }
+        }
+        ObtenerDireccionDash();
+        if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.UpArrow))
+        {
+            if (!activarDash && !volverUsarDash && !gameObject.GetComponent<PInteraccion>().activarSostener)
+            {
+                StartCoroutine(RetrasoDash());
+            }
         }
         if (activarDash) { Dash(); }
         // verificacion si tiene plataforma para bajar
         BajarPlataforma();
+
+        // punto de guia
+        PuntoGuia();
     }
     /*** Colisiones ***/
     /*****************/
@@ -173,11 +198,11 @@ public class PMovimiento : MonoBehaviour
             if (!dashHorizontal)
             {
                 // x
-                if (dashDer && y == 0 || dashDer && x == 0 && y == 0) { rb.velocity = Vector2.right * fuerzaDash; }
-                if (!dashDer && y == 0 || !dashDer && x == 0 && y == 0) { rb.velocity = Vector2.left * fuerzaDash; }
+                if ( dashDer && flechaY == 0 ||  dashDer && flechaX == 0 && flechaY == 0) { rb.velocity = Vector2.right * fuerzaDash; }
+                if (!dashDer && flechaY == 0 || !dashDer && flechaX == 0 && flechaY == 0) { rb.velocity = Vector2.left  * fuerzaDash; }
                 // y
-                if (dashUp && x == 0 && y != 0) { rb.velocity = Vector2.up * (fuerzaDash * 0.80f); }
-                if (!dashUp && x == 0 && y != 0) { rb.velocity = Vector2.down * (fuerzaDash * 0.80f); }
+                if ( dashUp && flechaX == 0 && flechaY != 0) { rb.velocity = Vector2.up   * (fuerzaDash * 0.80f); }
+                if (!dashUp && flechaX == 0 && flechaY != 0) { rb.velocity = Vector2.down * (fuerzaDash * 0.80f); }
             }
             else
             {
@@ -195,32 +220,32 @@ public class PMovimiento : MonoBehaviour
     {
         if (!activarDash)
         {
-            if (x > 0)
+            if (flechaX > 0)
             {
                 dashDer = true;               
             }
-            if (x < 0)
+            if (flechaX < 0)
             {
                 dashDer = false;
             }
-            if (y > 0)
+            if (flechaY > 0)
             {
                 dashUp = true;
             }
-            if (y < 0)
+            if (flechaY < 0)
             {
                 dashUp = false;
             }
-            if (!dashHorizontal) { dashMove = (x != 0 && y != 0 ? true : false); } else { dashMove = false; }
-            dashX = (x > 0 ? 1 : -1);
-            dashY = (y > 0 ? 1 : -1);
+            if (!dashHorizontal) { dashMove = (flechaX != 0 && flechaY != 0 ? true : false); } else { dashMove = false; }
+            dashX = (flechaX > 0 ? 1 : -1);
+            dashY = (flechaY > 0 ? 1 : -1);
         }
     }
     IEnumerator TiempoDash()
     {
         yield return new WaitForSeconds(tiempoDash);
-        rb.gravityScale = 1;
         activarDash = false;
+        rb.gravityScale = 1;
         yield return new WaitForSeconds(tiempoVolverDash);
         volverUsarDash = false;
 
@@ -239,7 +264,19 @@ public class PMovimiento : MonoBehaviour
         else { activarBajarPlataforma = false; }
     }
 
-
+    IEnumerator RetrasoDash()
+    {
+        yield return new WaitForSeconds(0.08f);
+        activarDash = true;
+        volverUsarDash = true;
+        StartCoroutine(TiempoDash());
+    }
+    public void PuntoGuia()
+    {
+        puntoX = Input.GetAxis("Horizontal");
+        puntoY = Input.GetAxis("Vertical");
+        puntoGuia.localPosition = new Vector3(puntoX,puntoY,0);
+    }
     /*** Input ***/
     /************/
 

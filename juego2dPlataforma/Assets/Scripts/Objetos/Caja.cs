@@ -205,7 +205,7 @@ public class Caja : MonoBehaviour
 
     /*** Ayuda Visuales ***/
     /*********************/
-    private void OnDrawGizmos()
+    /*private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawLine(posRayo[0].position, posRayo[0].position - new Vector3(0, distanciaDelRayCast, 0));
@@ -213,5 +213,5 @@ public class Caja : MonoBehaviour
         Gizmos.DrawLine(posRayo[1].position, posRayo[1].position - new Vector3(0, distanciaDelRayCast, 0));
          Gizmos.color = Color.blue;
         Gizmos.DrawLine(posRayo[2].position, posRayo[2].position - new Vector3(0, distanciaDelRayCast, 0));
-    }
+    }*/
 }
